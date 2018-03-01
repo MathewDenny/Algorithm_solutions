@@ -29,6 +29,28 @@ void error_handler(int32_t n)
 	}
 }
 
+// Utility function to find GCD of 'a' and 'b'
+int gcd(int a, int b)
+{
+    if (b==0)
+        return a;
+    return gcd(b, a%b);
+}
+
+// Returns LCM of array elements
+uint64_t findlcm(uint32_t* arr, int n)
+{
+    // Initialize result
+	uint64_t ans = arr[0];
+
+
+    for (int i=1; i<n; i++)
+        ans = ( ((arr[i]*ans)) /
+                (gcd(arr[i], ans)) );
+
+    return ans;
+}
+
 // A utility function to swap to integers
 void swap (int *a, int *b)
 {
@@ -188,6 +210,15 @@ void print_queue(struct queue *Qptr) {
 	printf(" \n\r");
 }
 
+#define Q_IS_EMPTY(Q) (((!(Q)->head) && (!(Q)->tail)) ? 1 : 0)
+uint8_t is_empty(struct queue *Qptr)
+{
+
+	if (Qptr->head == NULL && Qptr->tail == NULL)
+		return 1;
+	else
+		return 0;
+}
 /*********** END :QUEUE IMPLEMENTATION **********/
 
 
@@ -212,6 +243,112 @@ int32_t print_deck(deck* deck_ptr)
 	return E_SUCCESS;
 }
 
+int32_t copy_deck(deck* deck_ptr, deck* new_deck_ptr)
+{
+	if (deck_ptr == NULL || new_deck_ptr == NULL)
+		return E_INV_PARAM;
+
+
+	struct qNode *curr_node = deck_ptr->head;
+
+	if(!is_empty(new_deck_ptr))
+		delete_queue(new_deck_ptr);
+
+	while (curr_node != NULL ) {
+		enqueue(new_deck_ptr, curr_node->data);
+		curr_node = curr_node->next;
+	}
+
+	return E_SUCCESS;
+
+}
+
+int32_t do_a_round(deck* deck_ptr, deck* table_ptr, uint32_t size)
+{
+	if (deck_ptr == NULL || table_ptr == NULL)
+		return E_INV_PARAM;
+	struct qNode *node;
+	if(!is_empty(table_ptr))
+			delete_queue(table_ptr);
+	while(!is_empty(deck_ptr)) {
+		dequeue(deck_ptr, &node);
+		enqueue(table_ptr, node->data);
+		free(node);
+		if (!is_empty(deck_ptr)) {
+			dequeue(deck_ptr, &node);
+			enqueue(deck_ptr, node->data);
+			free(node);
+		}
+	}
+	printf("A round finished\n\r");
+	return E_SUCCESS;
+}
+
+
+
+int32_t order_calculate(deck* new_deck, deck* original_deck, uint32_t size)
+{
+	if (new_deck == NULL || original_deck == NULL)
+		return E_INV_PARAM;
+	struct qNode *orig_node = original_deck->head;
+	struct qNode *curr_node = new_deck->head;
+
+	// to speed up the lookup
+	int *temp_array = malloc(size * sizeof(uint32_t));
+	int *counts = malloc(size * sizeof(uint32_t));
+	int i = 0, j = 0, pos = 0, data = orig_node->data, root_data;
+	while (i < size) {
+		temp_array[i] = orig_node->data;
+		orig_node = orig_node->next;
+		i++;
+	}
+
+
+	orig_node = original_deck->head;
+	for (i = 0; i < size; i++) {
+		counts[i] = 0;
+		data = orig_node->data;
+		root_data = data;
+		curr_node = new_deck->head;
+		for (j = 0; j < size ; j++) {
+			if(data == curr_node->data) {
+				counts[i] = counts[i] + 1;
+				pos = size  - 1 - j;
+				data = temp_array[pos];
+				if (data == root_data) {
+					// Thats all we need. Procedd to next element
+
+					break;
+				}
+				{
+					// search again
+					j = -1;
+					curr_node = new_deck->head;
+				}
+
+			}
+			else {
+				curr_node = curr_node->next;
+			}
+		}
+		orig_node = orig_node->next;
+
+	}
+
+	printf("Order finding finished\n\r");
+
+	i = 0;
+	while (i < size) {
+		printf("%d ", counts[i]);
+		i++;
+	}
+
+	uint64_t lcm = findlcm(counts, size);
+
+	printf ("\n\rLCM = %lu\n\r", lcm);
+	return E_SUCCESS;
+}
+
 void main(int argc, char** argv)
 {
 
@@ -233,21 +370,42 @@ void main(int argc, char** argv)
 
 	// Creates a deck with deck_size elements
 	// Also randomly initializes the deck.
-	deck card_deck;
+	deck card_deck, orig_deck;
 	if ( (err = create_deck(&card_deck, deck_size)) < 0) {
 		printf("Error creating deck: "); error_handler(err);
 		exit(0);
 	}
 
-	printf("Printing the queue now\n\r");
-	fflush(stdout);
+	printf("Printing the original deck\n\r");
+	print_deck(&card_deck);
 
-	print_queue(&card_deck);
+	// Creating a copy of the original
+	if ( (err = create_deck(&orig_deck, 0)) < 0) {
+			printf("Error creating deck: "); error_handler(err);
+			exit(0);
+	}
+	if ( (err = copy_deck(&card_deck, &orig_deck)) < 0) {
+		printf("Error copying deck: "); error_handler(err);
+		exit(0);
+	}
+	printf("Printing the copied deck\n\r");
+	print_deck(&orig_deck);
 
-	printf("Deleting the queue now\n\r");
-	fflush(stdout);
 
-	delete_queue(&card_deck);
+	deck table_deck;
+	if ( (err = create_deck(&table_deck, 0)) < 0) {
+		printf("Error creating deck: "); error_handler(err);
+		exit(0);
+	}
+
+	do_a_round(&card_deck, &table_deck, deck_size);
+
+	printf("Printing the deck after a round\n\r");
+	print_deck(&card_deck);
+
+
+	// Now calculate the order of each element in the deck
+	order_calculate(&table_deck, &orig_deck, deck_size);
 
 
 
