@@ -524,7 +524,7 @@ void main(int argc, char** argv)
 	}
 
 	printf("Printing the original deck\n\r");
-	//print_deck(&card_deck);
+	print_deck(&card_deck);
 
 	// Creating a copy of the original
 	if ((err = initialize_deck(&orig_deck, 0)) < 0) {
@@ -547,7 +547,7 @@ void main(int argc, char** argv)
 	do_a_round(&card_deck, &table_deck, deck_size);
 
 	printf("Printing the deck after a round(Reverse Order)\n\r");
-	//print_deck(&table_deck);
+	print_deck(&table_deck);
 
 
 	// Now calculate the number of rounds required for the deck
