@@ -236,6 +236,7 @@ int32_t initialize_queue(struct queue *Qptr, uint32_t size)
 			// printf("%d ", random_nos[i]);
 			enqueue(Qptr, random_nos[i++]);
 		}
+		free (random_nos);
 		// printf("\n\r");
 	}
 	return E_SUCCESS;
@@ -491,6 +492,8 @@ int32_t rounds_calculate(deck* new_deck, deck* original_deck,
 	// }
 
 	*p_no_of_rounds = findlcm(counts, size);
+
+	free(counts);
 	return E_SUCCESS;
 }
 
@@ -556,5 +559,10 @@ void main(int argc, char** argv)
 		exit(0);
 	}
 	printf ("\n\rNumber of rounds required = %lu\n\r", rounds);
+
+	empty_queue(&card_deck);
+	empty_queue(&orig_deck);
+	empty_queue(&table_deck);
+
 
 }
